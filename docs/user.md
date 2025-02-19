@@ -29,7 +29,7 @@ Response Body (Failed) :
 
 ```json
 {
-  "errors": "Username already been taken, ..."
+  "error": "Username already been taken, ..."
 }
 ```
 

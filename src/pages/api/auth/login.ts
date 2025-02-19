@@ -1,34 +1,62 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { User } from "@/models/user-model";
+import { prismaClient } from "@/app/database";
+import { LoginUserSchema } from "@/validations/user-validation";
 import { NextApiRequest, NextApiResponse } from "next";
+import bcrypt from "bcrypt";
+import { ZodError } from "zod";
+import { toUserResponse } from "@/models/user-model";
 
 type ResponseData = {
-  message: string;
-  token?: string;
+  username: string;
+  name: string;
+  token: string;
 };
 
-export default function handler(
+export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ResponseData>
+  res: NextApiResponse
 ) {
   if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method Not Allowed" });
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const user: User = req.body;
-  const { username, password } = user;
+  try {
+    const loginRequest = LoginUserSchema.parse(req.body);
+    const user = await prismaClient.user.findUnique({
+      where: {
+        username: loginRequest.username,
+      },
+    });
 
-  if (!username || !password) {
-    return res
-      .status(400)
-      .json({ message: "Username and password are required" });
+    if (!user) {
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
+    const passwordMatch = await bcrypt.compare(
+      loginRequest.password,
+      user.password
+    );
+
+    if (passwordMatch) {
+      const response: ResponseData = {
+        ...toUserResponse(user),
+        token: "dummy-jwt-token",
+      };
+
+      return res.status(200).json({
+        data: response,
+      });
+    }
+
+    return res.status(400).json({ error: "Invalid credentials" });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({
+        message: error.errors[0],
+      });
+    }
+
+    return res.status(500).json({
+      message: "Error occured",
+    });
   }
-
-  if (username === "doni" && password === "rahasia") {
-    return res
-      .status(200)
-      .json({ message: "Login successful", token: "dummy-jwt-token" });
-  }
-
-  return res.status(401).json({ message: "Invalid credentials" });
 }

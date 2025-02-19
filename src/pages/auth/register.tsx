@@ -1,6 +1,5 @@
 import * as React from "react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,7 +11,6 @@ import {
 import { Input } from "@/components/ui/input";
 import GuestLayout from "@/components/layouts/GuestLayout";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -23,28 +21,33 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import Link from "next/link";
-const loginFormSchema = z.object({
-  username: z
-    .string()
-    .min(3, "Username must be at least 3 character long")
-    .max(20, "Username cannot be exceed than 20 character"),
-  password: z.string().min(8, "Password must be at least 8 character long"),
-  name: z
-    .string()
-    .min(3, "Name must be at least 3 character long")
-    .max(100, "Username cannot be exceed than 100 character"),
+import { z, ZodType } from "zod";
+import { RegisterUserSchema } from "@/validations/user-validation";
+import { AlertDestructive } from "@/components/alert-destructive";
+import { LoadingButton } from "@/components/loading-button";
+import { useRouter } from "next/router";
+
+export const registerFormSchema: ZodType = RegisterUserSchema.extend({
+  confirm: z.string().min(8),
+}).refine((data) => data.password === data.confirm, {
+  message: "Password don't match",
+  path: ["confirm"],
 });
+type RegisterFormSchema = z.infer<typeof registerFormSchema>;
 
-type LoginFormSchema = z.infer<typeof loginFormSchema>;
+export default function Register() {
+  const router = useRouter();
+  const [error, setError] = React.useState<string>();
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
-export default function Login() {
-  const form = useForm<LoginFormSchema>({
-    resolver: zodResolver(loginFormSchema),
+  const form = useForm<RegisterFormSchema>({
+    resolver: zodResolver(registerFormSchema),
   });
 
   const { handleSubmit, control } = form;
 
   const onSubmit = handleSubmit(async (values) => {
+    setIsLoading(true);
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -57,12 +60,15 @@ export default function Login() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Something went wrong");
+        throw new Error(data.error || "Something went wrong");
       }
 
-      alert(`Login successful: ${data.token}`);
+      localStorage.setItem("user", JSON.stringify(data.data));
+      router.push("/auth/login");
     } catch (e) {
-      alert((e as Error).message);
+      setError((e as Error).message);
+    } finally {
+      setIsLoading(false);
     }
   });
 
@@ -72,12 +78,17 @@ export default function Login() {
         <form onSubmit={onSubmit}>
           <Card className="min-w-[330px] max-w-md mx-auto">
             <CardHeader>
-              <CardTitle className="text-xl font-semibold">Sign Up</CardTitle>
+              <CardTitle>Sign Up</CardTitle>
               <CardDescription>
-                Enter your email below to get started
+                Enter your data below to get started
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {error && (
+                <div className="mb-3">
+                  <AlertDestructive message={error} />
+                </div>
+              )}
               <div className="grid w-full items-center gap-4">
                 <FormField
                   control={control}
@@ -87,20 +98,6 @@ export default function Login() {
                       <FormLabel>Username</FormLabel>
                       <FormControl>
                         <Input type="username" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -119,17 +116,45 @@ export default function Login() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={control}
+                  name="confirm"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </CardContent>
             <CardFooter className="flex-col">
-              <Button className="w-full">Register</Button>
+              <LoadingButton className="w-full" loading={isLoading}>
+                Register
+              </LoadingButton>
               <div className="mt-4 text-center text-sm">
                 Already have an account?{" "}
                 <Link
                   className="underline underline-offset-4"
                   href="/auth/login"
                 >
-                  Login
+                  Sign in
                 </Link>
               </div>
             </CardFooter>

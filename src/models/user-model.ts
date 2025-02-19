@@ -1,4 +1,4 @@
-export type User = {
+export type UserResponse = {
   username: string;
   name: string;
   password?: string;
@@ -9,3 +9,10 @@ export type CreateUserRequest = {
   name: string;
   password: string;
 };
+
+export function toUserResponse(user: CreateUserRequest): UserResponse {
+  return {
+    username: user.username,
+    name: user.name,
+  };
+}

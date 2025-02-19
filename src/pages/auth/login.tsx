@@ -1,6 +1,5 @@
 import * as React from "react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -23,24 +22,40 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import Link from "next/link";
-const loginFormSchema = z.object({
-  username: z
-    .string()
-    .min(3, "Username must be at least 3 character long")
-    .max(20, "Username cannot be exceed than 20 character"),
-  password: z.string().min(8, "Password must be at least 8 character long"),
-});
+import { LoginUserSchema } from "@/validations/user-validation";
+import { AlertDestructive } from "@/components/alert-destructive";
+import { LoadingButton } from "@/components/loading-button";
+import { useUser } from "@/hooks/useUser";
+import { useRouter } from "next/router";
 
+const loginFormSchema = LoginUserSchema;
 type LoginFormSchema = z.infer<typeof loginFormSchema>;
 
 export default function Login() {
+  const router = useRouter();
+  const [error, setMessage] = React.useState<string>();
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const user = useUser();
+
   const form = useForm<LoginFormSchema>({
     resolver: zodResolver(loginFormSchema),
+    defaultValues: {
+      username: user?.username,
+    },
   });
+
+  React.useEffect(() => {
+    if (user) {
+      form.reset({
+        username: user.username,
+      });
+    }
+  }, [form, user]);
 
   const { handleSubmit, control } = form;
 
   const onSubmit = handleSubmit(async (values) => {
+    setIsLoading(true);
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -53,10 +68,16 @@ export default function Login() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Something went wrong");
+        throw new Error(data.error || "Something went wrong");
       }
+
+      console.log(data);
+      router.push("/dashboard");
     } catch (e) {
-      alert((e as Error).message);
+      setMessage((e as Error).message);
+      setIsLoading(false);
+    } finally {
+      setIsLoading(false);
     }
   });
 
@@ -66,14 +87,17 @@ export default function Login() {
         <form onSubmit={onSubmit}>
           <Card className="min-w-[330px] max-w-md mx-auto">
             <CardHeader>
-              <CardTitle className="text-xl font-semibold">
-                Welcome Back!
-              </CardTitle>
+              <CardTitle>Sign In</CardTitle>
               <CardDescription>
                 Enter your username below to login to your account
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {error && (
+                <div className="mb-3">
+                  <AlertDestructive message={error} />
+                </div>
+              )}
               <div className="grid w-full items-center gap-4">
                 <FormField
                   control={control}
@@ -104,7 +128,9 @@ export default function Login() {
               </div>
             </CardContent>
             <CardFooter className="flex-col">
-              <Button className="w-full">Login</Button>
+              <LoadingButton className="w-full" loading={isLoading}>
+                Login
+              </LoadingButton>
               <div className="mt-4 text-center text-sm">
                 Don&apos;t have an account?{" "}
                 <Link
