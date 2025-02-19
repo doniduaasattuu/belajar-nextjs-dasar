@@ -71,7 +71,6 @@ export default function Login() {
         throw new Error(data.error || "Something went wrong");
       }
 
-      console.log(data);
       router.push("/dashboard");
     } catch (e) {
       setMessage((e as Error).message);
