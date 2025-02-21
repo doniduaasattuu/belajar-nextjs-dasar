@@ -102,5 +102,6 @@ body {
 }
 
 #nprogress .bar {
-  background: #06b6d4 !important; /* Change to match your theme */
+  background: #f13d30 !important; /*Change to match your theme*/
+  /* #06b6d4 */
 }

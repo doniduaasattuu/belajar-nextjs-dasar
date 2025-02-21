@@ -1,14 +1,14 @@
-import Navbar from "../sections/navbar/default";
+import Navbar from "../navbar";
 
 export default function AuthenticatedLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }) {
   return (
-    <div>
+    <section>
       <Navbar />
       {children}
-    </div>
+    </section>
   );
 }

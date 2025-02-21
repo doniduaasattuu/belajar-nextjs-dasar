@@ -67,7 +67,9 @@ export default async function handler(
 
     const response: ResponseData = toUserResponse(user);
 
-    return res.status(200).json({ data: response });
+    setTimeout(() => {
+      return res.status(200).json({ data: response });
+    }, 3000);
   } catch (error) {
     if (error instanceof ZodError) {
       return res.status(400).json({

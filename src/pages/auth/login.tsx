@@ -27,6 +27,8 @@ import { AlertDestructive } from "@/components/alert-destructive";
 import { LoadingButton } from "@/components/loading-button";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/router";
+import { Checkbox } from "@/components/ui/checkbox";
+import { fetchApiWithProgress } from "@/lib/api";
 
 const loginFormSchema = LoginUserSchema;
 type LoginFormSchema = z.infer<typeof loginFormSchema>;
@@ -57,7 +59,7 @@ export default function Login() {
   const onSubmit = handleSubmit(async (values) => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetchApiWithProgress("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -79,6 +81,12 @@ export default function Login() {
       setIsLoading(false);
     }
   });
+
+  const [showPassword, setShowPassword] = React.useState<boolean>(false);
+
+  const handleShowPassword = (e: boolean) => {
+    setShowPassword(e);
+  };
 
   return (
     <GuestLayout>
@@ -118,12 +126,27 @@ export default function Login() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" {...field} />
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="show_password"
+                    onCheckedChange={(e) => handleShowPassword(e as boolean)}
+                  />
+                  <label
+                    htmlFor="show_password"
+                    className="text-sm medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Show password
+                  </label>
+                </div>
               </div>
             </CardContent>
             <CardFooter className="flex-col">

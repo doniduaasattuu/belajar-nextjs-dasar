@@ -26,6 +26,7 @@ import { RegisterUserSchema } from "@/validations/user-validation";
 import { AlertDestructive } from "@/components/alert-destructive";
 import { LoadingButton } from "@/components/loading-button";
 import { useRouter } from "next/router";
+import { fetchApiWithProgress } from "@/lib/api";
 
 export const registerFormSchema: ZodType = RegisterUserSchema.extend({
   confirm: z.string().min(8),
@@ -49,7 +50,7 @@ export default function Register() {
   const onSubmit = handleSubmit(async (values) => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await fetchApiWithProgress("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
