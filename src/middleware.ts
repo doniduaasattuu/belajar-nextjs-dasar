@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.JWT_SECRET || "RG9uaSBEYXdhbg=="
-);
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET is not set");
+}
 
-const protectedRoutes = ["/dashboard"];
+const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET);
+const protectedRoutes = ["/home", "/pricing", "/auth/profile"];
 const authRoutes = ["/auth/login", "/auth/register"];
 
 export async function middleware(request: NextRequest) {
@@ -19,17 +20,31 @@ export async function middleware(request: NextRequest) {
 
   try {
     if (token) {
-      await jwtVerify(token, SECRET_KEY);
+      const { payload } = await jwtVerify(token, SECRET_KEY);
 
-      if (isAuthRoute) {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
+      // Cek apakah token masih valid berdasarkan expiry time
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        throw new Error("Token expired");
       }
 
-      return NextResponse.next();
+      // Jika user sudah login, redirect dari /auth/login ke /home
+      if (isAuthRoute) {
+        return NextResponse.redirect(new URL("/home", request.url));
+      }
+
+      const response = NextResponse.next();
+      response.headers.set("x-username", payload.username as string);
+
+      return response;
     }
 
+    // Jika tidak ada token dan mengakses halaman yang dilindungi, redirect ke login
     if (isProtectedRoute) {
-      return NextResponse.redirect(new URL("/auth/login", request.url));
+      const response = NextResponse.redirect(
+        new URL("/auth/login", request.url)
+      );
+      response.cookies.set("token", "", { path: "/", expires: new Date(0) }); // Hapus token jika ada
+      return response;
     }
 
     return NextResponse.next();
@@ -37,13 +52,13 @@ export async function middleware(request: NextRequest) {
     console.log("JWT verification failed", error);
 
     if (isProtectedRoute) {
-      return NextResponse.redirect(new URL("/auth/login", request.url));
+      const response = NextResponse.redirect(
+        new URL("/auth/login", request.url)
+      );
+      response.cookies.set("token", "", { path: "/", expires: new Date(0) }); // Hapus token jika ada
+      return response;
     }
 
     return NextResponse.next();
   }
 }
-
-export const config = {
-  matcher: ["/dashboard/:path*", "/auth/:path*"],
-};

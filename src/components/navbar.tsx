@@ -7,11 +7,12 @@ import {
 import { Menu } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { ThemeToggle } from "./theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { fetchApiWithProgress } from "@/lib/api";
 import { useRouter } from "next/router";
+import { NavLink } from "./nav-link";
+import Link from "next/link";
+import { ThemeToggle } from "./theme-toggle";
 
 const Navbar = () => {
   const router = useRouter();
@@ -25,9 +26,16 @@ const Navbar = () => {
     }
   };
 
+  const navigations = [
+    {
+      href: "/home",
+      label: "Home",
+    },
+  ];
+
   return (
-    <nav className="w-full bg-card">
-      <Card className="container mx-auto py-3 px-4 border-0 flex items-center justify-between gap-6 rounded-none shadow-none">
+    <nav className={"w-full bg-card"}>
+      <Card className="container max-w-2xl mx-auto py-2 px-4 flex items-center justify-between gap-6 rounded-none shadow-none border-0">
         <div className="flex md:hidden mr-2 items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -37,52 +45,29 @@ const Navbar = () => {
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="start">
-              <DropdownMenuItem>
-                <a href="#home">Home</a>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <a href="#features">Features</a>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <a href="#pricing">Pricing</a>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <a href="#faqs">FAQs</a>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Button variant="secondary" className="w-full text-sm">
-                  Login
-                </Button>
-              </DropdownMenuItem>
+              {navigations.map((nav, index) => {
+                return (
+                  <DropdownMenuItem asChild key={index}>
+                    <NavLink href={nav.href}>{nav.label}</NavLink>
+                  </DropdownMenuItem>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
         <ul className="hidden md:flex items-center gap-10 text-card-foreground">
           <div className="text-md font-semibold me-5">TodolistApp</div>
-
-          <li>
-            <Link className="text-sm" href="/home">
-              Home
-            </Link>
-          </li>
-          <li>
-            <Link className="text-sm" href="/features">
-              Features
-            </Link>
-          </li>
-          <li>
-            <Link className="text-sm" href="/pricing">
-              Pricing
-            </Link>
-          </li>
-          <li>
-            <Link className="text-sm" href="/faqs">
-              FAQs
-            </Link>
-          </li>
+          {navigations.map((nav, index) => {
+            return (
+              <li key={index}>
+                <NavLink className="py-2 px-1" href={nav.href}>
+                  {nav.label}
+                </NavLink>
+              </li>
+            );
+          })}
         </ul>
-
         <div className="flex items-center space-x-3">
           <ThemeToggle />
 
@@ -98,12 +83,10 @@ const Navbar = () => {
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <a href="/profile">Profile</a>
+              <DropdownMenuItem asChild>
+                <Link href="/auth/profile">Profile</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <div onClick={handleLogout}>Logout</div>
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

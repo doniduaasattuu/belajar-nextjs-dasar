@@ -10,8 +10,9 @@ CREATE TABLE `users` (
 
 -- CreateTable
 CREATE TABLE `todolists` (
-    `id` BIGINT NOT NULL,
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
     `todo` VARCHAR(100) NOT NULL,
+    `status` BOOLEAN NOT NULL DEFAULT false,
     `username` VARCHAR(100) NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),

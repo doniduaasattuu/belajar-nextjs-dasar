@@ -1,10 +1,10 @@
-import { ThemeProvider } from "@/components/theme-provider";
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import * as React from "react";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import { useRouter } from "next/router";
+import { ThemeProvider } from "@/components/theme-provider";
 
 NProgress.configure({ showSpinner: false, speed: 500 });
 

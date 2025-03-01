@@ -1,0 +1,19 @@
+openapi: "3.0.3"
+info:
+  title: User API Specifications
+  version: "1.0"
+servers:
+  - url: https://localhost:3000/api/auth/
+paths:
+  /users:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              default:
+                { "username": string, "name": string, "password": string }
+      summary: "Register new user"
+      responses:
+        "200":
+          description: OK

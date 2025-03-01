@@ -6,6 +6,7 @@ export const BaseUserSchema = z.object({
     .min(3)
     .max(20)
     .toLowerCase()
+    .trim()
     .refine((value: string) => !/\s/.test(value), {
       message: "String cannot contain spaces",
     }),

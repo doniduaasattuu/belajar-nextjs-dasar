@@ -12,9 +12,7 @@ type ResponseData = {
   name: string;
 };
 
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.JWT_SECRET || "RG9uaSBEYXJtYXdhbg=="
-);
+const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET);
 
 export default async function handler(
   req: NextApiRequest,
