@@ -7,7 +7,7 @@ import Loading from "@/components/loader";
 export default function ProfilePage() {
   return (
     <AuthenticatedLayout>
-      <Suspense fallback={<Loading />}>Profile</Suspense>
+      <div className="h-full">Profile</div>
     </AuthenticatedLayout>
   );
 }

@@ -29,7 +29,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginUserSchema } from "@/validations/user-validation";
 import { useUser } from "@/hooks/useUser";
 import { useRouter } from "next/router";
-import { fetchApiWithProgress } from "@/lib/api";
+import { signIn } from "next-auth/react";
 
 const loginFormSchema = LoginUserSchema;
 type LoginFormSchema = z.infer<typeof loginFormSchema>;
@@ -60,21 +60,20 @@ export default function LoginForm() {
   const onSubmit = handleSubmit(async (values) => {
     setIsLoading(true);
     try {
-      const response = await fetchApiWithProgress("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
+      const username = values.username;
+      const password = values.password;
+
+      const res = await signIn("credentials", {
+        username,
+        password,
+        redirect: false,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Something went wrong");
+      if (res?.error) {
+        throw new Error(res?.error);
       }
 
-      router.push("/home");
+      router.push("/todolists");
     } catch (e) {
       setMessage((e as Error).message);
       setIsLoading(false);

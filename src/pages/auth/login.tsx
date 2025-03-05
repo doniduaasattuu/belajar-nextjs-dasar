@@ -1,16 +1,21 @@
 import * as React from "react";
-import { Suspense } from "react";
 
 import GuestLayout from "@/components/layouts/GuestLayout";
 import LoginForm from "@/components/login-form";
-import Loading from "@/components/loader";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
 
 export default function LoginPage() {
-  return (
-    <GuestLayout>
-      <Suspense fallback={<Loading />}>
+  const { status } = useSession();
+  const router = useRouter();
+
+  if (status == "authenticated") {
+    router.replace("/todolists");
+  } else {
+    return (
+      <GuestLayout>
         <LoginForm />
-      </Suspense>
-    </GuestLayout>
-  );
+      </GuestLayout>
+    );
+  }
 }
