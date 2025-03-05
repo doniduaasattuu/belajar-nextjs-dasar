@@ -8,27 +8,23 @@ import { Menu } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { fetchApiWithProgress } from "@/lib/api";
-import { useRouter } from "next/router";
 import { NavLink } from "./nav-link";
 import Link from "next/link";
+import { signOut, useSession } from "next-auth/react";
 import { ThemeToggle } from "./theme-toggle";
 
 const Navbar = () => {
-  const router = useRouter();
-  const handleLogout = async () => {
-    const response = await fetchApiWithProgress("/api/auth/logout", {
-      method: "DELETE",
-    });
+  const { data: user } = useSession();
+  const name = user?.user.name;
 
-    if (response.ok) {
-      router.push("/auth/login");
-    }
+  const handleLogout = async () => {
+    const baseUrl = window.location.origin;
+    signOut({ callbackUrl: `${baseUrl}/` });
   };
 
   const navigations = [
     {
-      href: "/home",
+      href: "/todolists",
       label: "Home",
     },
   ];
@@ -69,11 +65,14 @@ const Navbar = () => {
           })}
         </ul>
         <div className="flex items-center space-x-3">
+          <div className="font-normal text-sm text-muted-foreground">
+            {name}
+          </div>
           <ThemeToggle />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Avatar className="cursor-pointer">
+              <Avatar className="cursor-pointer h-9 w-9">
                 <AvatarImage
                   src="https://github.com/shadcn.png"
                   alt="@shadcn"

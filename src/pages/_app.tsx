@@ -4,6 +4,7 @@ import * as React from "react";
 import NProgress from "nprogress";
 import "nprogress/nprogress.css";
 import { useRouter } from "next/router";
+import AuthProvider from "@/context/AuthProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 
 NProgress.configure({ showSpinner: false, speed: 500 });
@@ -27,8 +28,10 @@ export default function App({ Component, pageProps }: AppProps) {
   }, [router]);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <Component {...pageProps} />
-    </ThemeProvider>
+    <AuthProvider session={pageProps.session}>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <Component {...pageProps} />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

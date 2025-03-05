@@ -11,33 +11,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { fetchApiWithProgress } from "@/lib/api";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Textarea } from "./ui/textarea";
-import { LoadingButton } from "./loading-button";
-import { CreateTodolistSchema } from "@/validations/todolist-validation";
 import useSWR, { mutate } from "swr";
+import { TodoDialog } from "./todo-dialog";
 
 type Todo = {
   id: number;
@@ -45,32 +23,36 @@ type Todo = {
   todo: string;
 };
 
-const createTodolistSchema = CreateTodolistSchema;
-type CreateTodolistSchema = z.infer<typeof createTodolistSchema>;
-
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
-
 export default function TodolistPage() {
-  const { data } = useSWR("http://localhost:3000/api/todolists", fetcher, {
-    refreshInterval: 5000,
+  const origin = window.location.origin;
+  const fetcher = (url: string) =>
+    fetch(url, {
+      method: "GET",
+    }).then((res) => res.json());
+
+  const { data } = useSWR(`${origin}/api/todolists`, fetcher, {
+    // refreshInterval: 6000,
   });
   const [isOpen, setIsOpen] = useState(false);
-
-  const handleDialogTodo = () => {
-    setIsOpen(true);
-  };
-
   const handleCloseDialog = () => {
     setIsOpen(false);
   };
+  const handleNewTaskDialog = () => {
+    setIsOpen(true);
+  };
 
-  const handleDelete = async (todoId: number) => {
+  const handleDelete = (todoId: number) => {
     try {
       mutate(
-        "http://localhost:3000/api/todolists",
+        `${origin}/api/todolists`,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (data: any) => {
           if (!data || !data.data) return data;
+
+          localStorage.setItem(
+            String(todoId),
+            JSON.stringify(data.data.find((todo: Todo) => todo.id === todoId))
+          );
 
           return {
             data: data.data.filter((todo: Todo) => todo.id !== todoId),
@@ -79,14 +61,20 @@ export default function TodolistPage() {
         false
       );
 
-      await fetch(`http://localhost:3000/api/todolists/${todoId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      mutate("http://localhost:3000/api/todolists");
       toast.success("Success", {
         description: `Todo list successfully deleted.`,
+        action: {
+          label: "Undo",
+          onClick: () => handleCancelDelete(todoId),
+        },
+      });
+
+      fetch(`${origin}/api/todolists/${todoId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deleting: true,
+        }),
       });
     } catch (error) {
       toast.error("Error Occured", {
@@ -95,51 +83,48 @@ export default function TodolistPage() {
     }
   };
 
-  // HANDLE NEW TASK
-  const form = useForm<CreateTodolistSchema>({
-    resolver: zodResolver(createTodolistSchema),
-  });
-
-  const { handleSubmit, control, reset } = form;
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
-  const onSubmit = handleSubmit(async (values) => {
-    setIsSubmitting(true);
+  const handleCancelDelete = (todoId: number) => {
     try {
-      const response = await fetchApiWithProgress("/api/todolists", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
+      const deletedTodo = localStorage.getItem(String(todoId));
 
-      const data = await response.json();
+      if (deletedTodo) {
+        mutate(
+          `${origin}/api/todolists`,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (data: any) => {
+            if (!data || !data.data) return data;
+            return {
+              data: [JSON.parse(deletedTodo), ...data.data].sort(
+                (a, b) => b.id - a.id
+              ),
+            };
+          },
+          false
+        );
 
-      if (!response.ok) {
-        throw new Error(data.error || "Something went wrong");
+        localStorage.removeItem(String(todoId));
       }
 
-      toast.success("Success", {
-        description: "Todo list added successfully",
+      fetch(`${origin}/api/todolists/${todoId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: todoId,
+          undoing: true,
+        }),
       });
-      reset();
-      mutate("http://localhost:3000/api/todolists");
     } catch (error) {
-      toast.error("Error", {
-        description: (error as Error).message,
+      toast.error("Error Occured", {
+        description: String(error),
       });
-    } finally {
-      setIsSubmitting(false);
-      handleCloseDialog();
     }
-  });
+  };
 
   // HANDLE UPDATE
   const handleCheckboxChange = async (id: number, currentStatus: boolean) => {
     try {
       mutate(
-        "http://localhost:3000/api/todolists",
+        `${origin}/api/todolists`,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (data: any) => {
           if (!data || !data.data) return data;
@@ -152,19 +137,20 @@ export default function TodolistPage() {
         false
       );
 
-      await fetch(`http://localhost:3000/api/todolists/${id}`, {
+      const response = await fetch(`${origin}/api/todolists/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: id, status: !currentStatus }),
       });
 
-      // Revalidate SWR data
-      mutate("http://localhost:3000/api/todolists");
+      if (!response.ok) throw new Error("Failed to update status");
+
       toast.success("Success", {
         description: !currentStatus
           ? "Todo successfully marked as complete"
           : "Todo successfully marked as incomplete",
       });
+      mutate(`${origin}/api/todolists`);
     } catch (e) {
       if (e instanceof Error) {
         toast.error("Failed to update status");
@@ -185,7 +171,7 @@ export default function TodolistPage() {
               placeholder="Todo"
             />
           </div>
-          <Button variant="outline" onClick={handleDialogTodo}>
+          <Button variant="outline" onClick={handleNewTaskDialog}>
             <Plus />
             New Task
           </Button>
@@ -193,112 +179,54 @@ export default function TodolistPage() {
 
         <Table>
           <TableBody>
-            {data && data?.data
-              ? data?.data.map((todo: Todo) => (
-                  <TableRow key={todo.id} className="border-none">
-                    <TableCell className="w-10">
-                      <div className=" h-4 flex items-end">
-                        <Checkbox
-                          checked={todo.status}
-                          onCheckedChange={() =>
-                            handleCheckboxChange(todo.id, todo.status)
-                          }
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell>{todo.todo}</TableCell>
-                    <TableCell className="text-right items-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger>
-                          <MoreVertical size={18} />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Action</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>
-                            <Edit />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(todo.id)}
-                          >
-                            <Trash />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              : "Empty"}
+            {data && data?.data?.length > 0 ? (
+              data?.data.map((todo: Todo) => (
+                <TableRow key={todo.id} className="border-none">
+                  <TableCell className="w-10">
+                    <div className=" h-4 flex items-end">
+                      <Checkbox
+                        id={`${todo.id}`}
+                        checked={todo.status}
+                        onCheckedChange={() =>
+                          handleCheckboxChange(todo.id, todo.status)
+                        }
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Label htmlFor={`${todo.id}`}>{todo.todo}</Label>
+                  </TableCell>
+                  <TableCell className="text-right items-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <MoreVertical size={18} />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Action</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                          <Edit />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(todo.id)}>
+                          <Trash />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell>Empty</TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
 
-      <Dialog open={isOpen} onOpenChange={handleCloseDialog}>
-        <DialogContent className="sm:max-w-[425px] bg-card">
-          <Form {...form}>
-            <form onSubmit={onSubmit}>
-              <DialogHeader>
-                <DialogTitle>New Task</DialogTitle>
-                <DialogDescription>
-                  Enter the details of your new task below.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-3 my-5">
-                <FormField
-                  control={control}
-                  name="todo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Task</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} className="col-span-3" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="status"
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                          <Label
-                            htmlFor="status"
-                            className="text-sm font-normal"
-                          >
-                            Mark as done
-                          </Label>
-                        </div>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <DialogFooter>
-                <LoadingButton loading={isSubmitting} type="submit">
-                  Insert
-                </LoadingButton>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+      <TodoDialog isOpen={isOpen} handleCloseDialog={handleCloseDialog} />
     </div>
   );
-
-  {
-    /* <div className="flex space-x-2 items-center">
-                    <Checkbox id="done" />
-                    <Label htmlFor="done">Mark as done</Label>
-                  </div> */
-  }
 }
