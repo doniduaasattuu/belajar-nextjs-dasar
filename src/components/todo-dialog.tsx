@@ -25,16 +25,12 @@ import z from "zod";
 import { useState } from "react";
 import { toast } from "sonner";
 import { mutate } from "swr";
+import { NewTodoDialogProps } from "./todolist";
 
 const createTodolistSchema = CreateTodolistSchema;
 type CreateTodolistSchema = z.infer<typeof createTodolistSchema>;
 
-type TodoDialogProps = {
-  isOpen: boolean;
-  handleCloseDialog: () => void;
-};
-
-export function TodoDialog({ isOpen, handleCloseDialog }: TodoDialogProps) {
+export function TodoDialog({ isOpen, handleCloseDialog }: NewTodoDialogProps) {
   const form = useForm<CreateTodolistSchema>({
     resolver: zodResolver(createTodolistSchema),
   });
@@ -78,7 +74,7 @@ export function TodoDialog({ isOpen, handleCloseDialog }: TodoDialogProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleCloseDialog}>
-      <DialogContent className="sm:max-w-[425px] bg-card top-0 translate-y-[50%]">
+      <DialogContent className="sm:max-w-[425px] top-0 translate-y-[50%] sm:top-[50%] sm:translate-y-[-50%] bg-card text-primary">
         {/* fixed top-[0%] md:top-auto translate-y-[50%] md:translate-y-0 */}
         <Form {...form}>
           <form onSubmit={onSubmit}>

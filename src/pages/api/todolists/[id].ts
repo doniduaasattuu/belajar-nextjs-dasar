@@ -15,10 +15,36 @@ export default async function handler(
   const username = session.user.username;
 
   if (req.method === "PATCH") {
-    const { status, deleting, undoing } = req.body;
+    const { todo, status, deleting, undoing } = req.body;
 
     try {
-      if (deleting) {
+      if (todo) {
+        const isExist = await prismaClient.todolist.count({
+          where: {
+            username: username,
+            id: parseInt(id as string),
+          },
+        });
+
+        console.log(id);
+
+        if (isExist >= 1) {
+          await prismaClient.todolist.update({
+            where: {
+              username: username,
+              id: parseInt(id as string),
+            },
+            data: {
+              todo: todo,
+              updated_at: new Date(),
+            },
+          });
+
+          return res.status(200).json({ message: "Successfully updated" });
+        }
+
+        return res.status(404).json({ error: "Todolist not found" });
+      } else if (deleting) {
         await prismaClient.todolist.update({
           where: {
             username: username,

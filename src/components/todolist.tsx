@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Checkbox } from "./ui/checkbox";
 import { Edit, MoreVertical, Plus, Trash } from "lucide-react";
@@ -14,13 +14,26 @@ import {
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import useSWR, { mutate } from "swr";
+import useSWR, { mutate, ScopedMutator } from "swr";
 import { TodoDialog } from "./todo-dialog";
+import TodoEditDialog from "./todo-edit-dialog";
 
-type Todo = {
+export type Todo = {
   id: number;
   status: boolean;
   todo: string;
+};
+
+export type NewTodoDialogProps = {
+  isOpen: boolean;
+  handleCloseDialog: () => void;
+};
+
+export type EditTodoDialogProps = {
+  isOpen: boolean;
+  handleCloseDialog: () => void;
+  todo: Todo | undefined;
+  mutate: ScopedMutator;
 };
 
 export default function TodolistPage() {
@@ -31,14 +44,23 @@ export default function TodolistPage() {
     }).then((res) => res.json());
 
   const { data } = useSWR(`${origin}/api/todolists`, fetcher, {
-    // refreshInterval: 6000,
+    // refreshInterval: 5000,
   });
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isEdit, setIsEdit] = useState<boolean>(false);
+  const [editedTask, setEditedTask] = useState<Todo>();
+
   const handleCloseDialog = () => {
     setIsOpen(false);
+    setIsEdit(false);
   };
+
   const handleNewTaskDialog = () => {
     setIsOpen(true);
+  };
+  const handleEditTaskDialog = (todo: Todo) => {
+    setEditedTask(todo);
+    setIsEdit(true);
   };
 
   const handleDelete = (todoId: number) => {
@@ -158,17 +180,43 @@ export default function TodolistPage() {
     }
   };
 
+  // HANDLE SEARCH
+  const [searchTerm, setSearchTerm] = useState<string | undefined>();
+
+  useEffect(() => {
+    if (searchTerm) {
+      mutate(
+        `${origin}/api/todolists`,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (data: any) => {
+          if (!data || !data.data) return data;
+
+          return {
+            data: data.data.filter((todo: Todo) =>
+              todo.todo.toLowerCase().includes(searchTerm.toLowerCase())
+            ),
+          };
+        },
+        false
+      );
+    } else {
+      mutate(`${origin}/api/todolists`);
+    }
+  }, [origin, searchTerm]);
+
   return (
     <div>
       <div className="max-w-2xl space-y-5">
-        <div className="flex justify-between items-end">
+        <div className="flex justify-between items-end space-x-2">
           <div className="space-y-1">
             <Label htmlFor="search">Search</Label>
             <Input
               id="search"
               name="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="max-w-md"
-              placeholder="Todo"
+              placeholder="Task"
             />
           </div>
           <Button variant="outline" onClick={handleNewTaskDialog}>
@@ -204,7 +252,9 @@ export default function TodolistPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Action</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleEditTaskDialog(todo)}
+                        >
                           <Edit />
                           Edit
                         </DropdownMenuItem>
@@ -227,6 +277,13 @@ export default function TodolistPage() {
       </div>
 
       <TodoDialog isOpen={isOpen} handleCloseDialog={handleCloseDialog} />
+
+      <TodoEditDialog
+        mutate={mutate}
+        todo={editedTask}
+        isOpen={isEdit}
+        handleCloseDialog={handleCloseDialog}
+      />
     </div>
   );
 }
