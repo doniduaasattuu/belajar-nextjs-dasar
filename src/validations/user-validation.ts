@@ -12,15 +12,37 @@ export const BaseUserSchema = z.object({
     }),
   name: z.string({ message: "Name is required" }).min(3).max(100),
   password: z.string({ message: "Password is required" }).min(8),
+  new_password: z.string({ message: "New Password is required" }).min(8),
 });
 
-export const RegisterUserSchema = BaseUserSchema;
+export const RegisterUserSchema = BaseUserSchema.extend({
+  confirm: z.string().min(8),
+}).refine((data) => data.password === data.confirm, {
+  message: "Password don't match",
+  path: ["confirm"],
+});
 
 export const LoginUserSchema = BaseUserSchema.pick({
   username: true,
   password: true,
 });
-export const UpdateUserSchema = BaseUserSchema;
+
+export const UpdateUserSchema = BaseUserSchema.pick({
+  username: true,
+  name: true,
+});
+
+export const UpdatePasswordSchema = BaseUserSchema.pick({
+  password: true,
+  new_password: true,
+})
+  .extend({
+    confirm: z.string().min(8),
+  })
+  .refine((data) => data.new_password === data.confirm, {
+    message: "Password don't match",
+    path: ["confirm"],
+  });
 
 export class UserValidation {
   static readonly REGISTER: ZodType = RegisterUserSchema;

@@ -283,7 +283,7 @@ export default function TodolistPage() {
           </div>
           <div className="space-x-2 min-w-max">
             <DropdownMenu>
-              <DropdownMenuTrigger>
+              <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
                   <Settings2 />
                 </Button>

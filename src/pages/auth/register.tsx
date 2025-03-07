@@ -21,19 +21,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import Link from "next/link";
-import { z, ZodType } from "zod";
+import { z } from "zod";
 import { RegisterUserSchema } from "@/validations/user-validation";
 import { AlertDestructive } from "@/components/alert-destructive";
 import { LoadingButton } from "@/components/loading-button";
 import { useRouter } from "next/router";
 import { fetchApiWithProgress } from "@/lib/api";
 
-export const registerFormSchema: ZodType = RegisterUserSchema.extend({
-  confirm: z.string().min(8),
-}).refine((data) => data.password === data.confirm, {
-  message: "Password don't match",
-  path: ["confirm"],
-});
+export const registerFormSchema = RegisterUserSchema;
 type RegisterFormSchema = z.infer<typeof registerFormSchema>;
 
 export default function Register() {

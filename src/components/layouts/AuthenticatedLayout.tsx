@@ -29,7 +29,7 @@ export default function AuthenticatedLayout({
   const name = data?.user?.name;
 
   return (
-    <Card className="h-screen w-full rounded-none shadow-none border-none">
+    <Card className="w-full min-h-screen rounded-none shadow-none border-none">
       <Navbar className="max-w-2xl px-4 mx-auto">
         <NavbarLeft>
           <div
