@@ -15,7 +15,7 @@ export default async function handler(
   const username = session.user.username;
 
   if (req.method === "PATCH") {
-    const { todo, status, deleting, undoing } = req.body;
+    const { todo, status, deleting, undoing, restore } = req.body;
 
     try {
       if (todo) {
@@ -56,7 +56,7 @@ export default async function handler(
         });
 
         return res.status(200).json({ success: true });
-      } else if (undoing) {
+      } else if (undoing || restore) {
         await prismaClient.todolist.update({
           where: {
             username: username,

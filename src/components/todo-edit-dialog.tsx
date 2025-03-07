@@ -32,6 +32,7 @@ export default function TodoEditDialog({
   handleCloseDialog,
   todo,
   mutate,
+  endpoint,
 }: EditTodoDialogProps) {
   const form = useForm<EditTodoSchema>({
     resolver: zodResolver(editTodoSchema),
@@ -49,7 +50,7 @@ export default function TodoEditDialog({
   const onSubmit = handleSubmit(async (values) => {
     try {
       mutate(
-        `${window.location.origin}/api/todolists`,
+        endpoint,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (data: any) => {
           if (!data || !data.data) return data;

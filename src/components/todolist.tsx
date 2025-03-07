@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Checkbox } from "./ui/checkbox";
-import { Edit, MoreVertical, Plus, Settings2, Trash } from "lucide-react";
+import {
+  ArchiveRestore,
+  Edit,
+  MoreVertical,
+  Plus,
+  Settings2,
+  Trash,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -21,11 +28,13 @@ import useSWR, { mutate, ScopedMutator } from "swr";
 import { TodoDialog } from "./todo-dialog";
 import TodoEditDialog from "./todo-edit-dialog";
 import { DropdownMenuCheckboxItemProps } from "@radix-ui/react-dropdown-menu";
+import { Skeleton } from "./ui/skeleton";
 
 export type Todo = {
   id: number;
   status: boolean;
   todo: string;
+  deleted_at?: string;
 };
 
 export type NewTodoDialogProps = {
@@ -38,6 +47,7 @@ export type EditTodoDialogProps = {
   handleCloseDialog: () => void;
   todo: Todo | undefined;
   mutate: ScopedMutator;
+  endpoint?: string;
 };
 
 export default function TodolistPage() {
@@ -52,7 +62,7 @@ export default function TodolistPage() {
   const [order, setOrder] = React.useState<string>("asc");
 
   const endpoint = `${origin}/api/todolists?withTrashed=${withTrashed}&order=${order}`;
-  const { data } = useSWR(endpoint, fetcher, {
+  const { data, isLoading } = useSWR(endpoint, fetcher, {
     // refreshInterval: 5000,
   });
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -85,9 +95,17 @@ export default function TodolistPage() {
             JSON.stringify(data.data.find((todo: Todo) => todo.id === todoId))
           );
 
-          return {
-            data: data.data.filter((todo: Todo) => todo.id !== todoId),
-          };
+          if (withTrashed) {
+            return {
+              data: data.data.map((todo: Todo) =>
+                todo.id === todoId ? { ...todo, deleted_at: new Date() } : todo
+              ),
+            };
+          } else {
+            return {
+              data: data.data.filter((todo: Todo) => todo.id !== todoId),
+            };
+          }
         },
         false
       );
@@ -184,7 +202,42 @@ export default function TodolistPage() {
       mutate(endpoint);
     } catch (e) {
       if (e instanceof Error) {
-        toast.error("Failed to update status");
+        toast.error(e.message);
+      }
+    }
+  };
+
+  // HANDLE RESTORE
+  const handleRestore = async (id: number) => {
+    try {
+      mutate(
+        endpoint,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (data: any) => {
+          if (!data || !data.data) return data;
+          return {
+            data: data.data.map((todo: Todo) =>
+              todo.id === id ? { ...todo, deleted_at: null } : todo
+            ),
+          };
+        },
+        false
+      );
+
+      const response = await fetch(`${origin}/api/todolists/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, restore: true }),
+      });
+
+      if (!response.ok) throw new Error("Failed to restore task");
+
+      toast.success("Success", {
+        description: "Todo restored successfully",
+      });
+    } catch (e) {
+      if (e instanceof Error) {
+        toast.error(e.message);
       }
     }
   };
@@ -264,7 +317,15 @@ export default function TodolistPage() {
 
         <Table>
           <TableBody>
-            {data && data?.data?.length > 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell className="space-y-6">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                </TableCell>
+              </TableRow>
+            ) : data && data?.data?.length > 0 ? (
               data?.data.map((todo: Todo) => (
                 <TableRow key={todo.id} className="border-none">
                   <TableCell className="w-10">
@@ -279,7 +340,13 @@ export default function TodolistPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Label htmlFor={`${todo.id}`}>{todo.todo}</Label>
+                    <Label htmlFor={`${todo.id}`}>
+                      {todo.deleted_at != null ? (
+                        <s className="text-red-400">{todo.todo}</s>
+                      ) : (
+                        <span>{todo.todo}</span>
+                      )}
+                    </Label>
                   </TableCell>
                   <TableCell className="text-right items-center">
                     <DropdownMenu>
@@ -290,15 +357,30 @@ export default function TodolistPage() {
                         <DropdownMenuLabel>Action</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
+                          className="cursor-pointer"
                           onClick={() => handleEditTaskDialog(todo)}
                         >
                           <Edit />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(todo.id)}>
-                          <Trash />
-                          Delete
-                        </DropdownMenuItem>
+
+                        {todo.deleted_at ? (
+                          <DropdownMenuItem
+                            className="cursor-pointer"
+                            onClick={() => handleRestore(todo.id)}
+                          >
+                            <ArchiveRestore />
+                            Restore
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            className="cursor-pointer"
+                            onClick={() => handleDelete(todo.id)}
+                          >
+                            <Trash />
+                            Delete
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -320,6 +402,7 @@ export default function TodolistPage() {
         todo={editedTask}
         isOpen={isEdit}
         handleCloseDialog={handleCloseDialog}
+        endpoint={endpoint}
       />
     </div>
   );

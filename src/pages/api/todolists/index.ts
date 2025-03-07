@@ -15,17 +15,18 @@ export default async function handler(
   const username = session.user.username;
   const search = req.query.todo as string;
 
-  const { withTrashed, order } = req.query;
-  console.log({
-    withTrashed: withTrashed,
-    order: order,
-  });
+  const withTrashed: boolean = req.query.withTrashed == "true";
+  const order: string = req.query.order as string;
 
   if (req.method === "GET") {
     const todos = await prismaClient.todolist.findMany({
       where: {
         username: username,
-        deleted_at: null,
+        ...(withTrashed
+          ? {}
+          : {
+              deleted_at: null,
+            }),
         todo: search
           ? {
               contains: search as string,
@@ -37,9 +38,10 @@ export default async function handler(
         todo: true,
         status: true,
         created_at: true,
+        deleted_at: true,
       },
       orderBy: {
-        id: "desc",
+        id: order as "asc" | "desc",
       },
     });
 
