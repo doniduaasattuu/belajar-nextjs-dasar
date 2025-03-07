@@ -63,7 +63,7 @@ export default function TodoEditDialog({
         false
       );
 
-      if (todo?.todo !== values.todo) {
+      if (todo?.todo.trim() !== values.todo.trim()) {
         const response = await fetch(`/api/todolists/${todo?.id}`, {
           method: "PATCH",
           headers: {

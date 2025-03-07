@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Checkbox } from "./ui/checkbox";
-import { Edit, MoreVertical, Plus, Trash } from "lucide-react";
+import { Edit, MoreVertical, Plus, Settings2, Trash } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -17,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import useSWR, { mutate, ScopedMutator } from "swr";
 import { TodoDialog } from "./todo-dialog";
 import TodoEditDialog from "./todo-edit-dialog";
+import { DropdownMenuCheckboxItemProps } from "@radix-ui/react-dropdown-menu";
 
 export type Todo = {
   id: number;
@@ -43,7 +47,12 @@ export default function TodolistPage() {
       method: "GET",
     }).then((res) => res.json());
 
-  const { data } = useSWR(`${origin}/api/todolists`, fetcher, {
+  type Checked = DropdownMenuCheckboxItemProps["checked"];
+  const [withTrashed, setWithTrashed] = React.useState<Checked>(false);
+  const [order, setOrder] = React.useState<string>("asc");
+
+  const endpoint = `${origin}/api/todolists?withTrashed=${withTrashed}&order=${order}`;
+  const { data } = useSWR(endpoint, fetcher, {
     // refreshInterval: 5000,
   });
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -66,7 +75,7 @@ export default function TodolistPage() {
   const handleDelete = (todoId: number) => {
     try {
       mutate(
-        `${origin}/api/todolists`,
+        endpoint,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (data: any) => {
           if (!data || !data.data) return data;
@@ -111,7 +120,7 @@ export default function TodolistPage() {
 
       if (deletedTodo) {
         mutate(
-          `${origin}/api/todolists`,
+          endpoint,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (data: any) => {
             if (!data || !data.data) return data;
@@ -146,7 +155,7 @@ export default function TodolistPage() {
   const handleCheckboxChange = async (id: number, currentStatus: boolean) => {
     try {
       mutate(
-        `${origin}/api/todolists`,
+        endpoint,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (data: any) => {
           if (!data || !data.data) return data;
@@ -172,7 +181,7 @@ export default function TodolistPage() {
           ? "Todo successfully marked as complete"
           : "Todo successfully marked as incomplete",
       });
-      mutate(`${origin}/api/todolists`);
+      mutate(endpoint);
     } catch (e) {
       if (e instanceof Error) {
         toast.error("Failed to update status");
@@ -186,7 +195,7 @@ export default function TodolistPage() {
   useEffect(() => {
     if (searchTerm) {
       mutate(
-        `${origin}/api/todolists`,
+        endpoint,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (data: any) => {
           if (!data || !data.data) return data;
@@ -200,9 +209,9 @@ export default function TodolistPage() {
         false
       );
     } else {
-      mutate(`${origin}/api/todolists`);
+      mutate(endpoint);
     }
-  }, [origin, searchTerm]);
+  }, [endpoint, origin, searchTerm]);
 
   return (
     <div>
@@ -219,10 +228,38 @@ export default function TodolistPage() {
               placeholder="Task"
             />
           </div>
-          <Button variant="outline" onClick={handleNewTaskDialog}>
-            <Plus />
-            New Task
-          </Button>
+          <div className="space-x-2 min-w-max">
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Button variant="outline" size="icon">
+                  <Settings2 />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Sorted by</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup value={order} onValueChange={setOrder}>
+                  <DropdownMenuRadioItem value="asc">
+                    Ascending
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="desc">
+                    Descending
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={withTrashed}
+                  onCheckedChange={setWithTrashed}
+                >
+                  With Trashed
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="outline" onClick={handleNewTaskDialog}>
+              <Plus />
+              New Task
+            </Button>
+          </div>
         </div>
 
         <Table>

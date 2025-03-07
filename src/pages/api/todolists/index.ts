@@ -15,6 +15,12 @@ export default async function handler(
   const username = session.user.username;
   const search = req.query.todo as string;
 
+  const { withTrashed, order } = req.query;
+  console.log({
+    withTrashed: withTrashed,
+    order: order,
+  });
+
   if (req.method === "GET") {
     const todos = await prismaClient.todolist.findMany({
       where: {
@@ -53,7 +59,7 @@ export default async function handler(
       const isExist = await prismaClient.todolist.findFirst({
         where: {
           username: username,
-          todo: parsed.todo,
+          todo: parsed.todo.trim(),
         },
       });
 
