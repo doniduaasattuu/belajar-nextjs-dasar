@@ -38,6 +38,23 @@ export default async function handler(
       return res.status(404).json({ error: "User not found" });
     }
 
+    if (username != credentials.username) {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
+
+    const nameTaken = await prismaClient.user.findFirst({
+      where: {
+        name: credentials.name,
+      },
+    });
+
+    if (nameTaken) {
+      return res.status(400).json({
+        field: "name",
+        message: "The name already been taken",
+      });
+    }
+
     const updatedUser = await prismaClient.user.update({
       where: {
         username: username,

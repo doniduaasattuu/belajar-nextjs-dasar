@@ -18,7 +18,7 @@ model User {
 
 model Todolist {
   id         Int       @id @default(autoincrement())
-  todo       String    @unique @db.VarChar(100)
+  todo       String    @db.VarChar(100)
   status     Boolean   @default(false)
   username   String    @db.VarChar(100)
   created_at DateTime  @default(now())
@@ -26,6 +26,7 @@ model Todolist {
   deleted_at DateTime?
   User       User      @relation(fields: [username], references: [username])
 
+  @@unique([username, todo])
   @@index([username], map: "todolists_username_fkey")
   @@map("todolists")
 }

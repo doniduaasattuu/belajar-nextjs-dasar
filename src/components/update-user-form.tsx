@@ -46,6 +46,13 @@ export default function UpdateUserForm() {
 
   const onSubmit = handleSubmit(async (values) => {
     try {
+      if (user?.name == values.name) {
+        toast.success("Success", {
+          description: "Profile successfully updated",
+        });
+        return;
+      }
+
       const response = await fetch("/api/auth/profile", {
         method: "PATCH",
         headers: {

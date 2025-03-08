@@ -25,15 +25,15 @@ import z from "zod";
 import { mutate } from "swr";
 import { useState } from "react";
 import { toast } from "sonner";
-import { NewTodoDialogProps } from "./todolist";
+import { NewTodoDialogProps, Todo } from "./todolist";
 
 const createTodolistSchema = CreateTodolistSchema;
 type CreateTodolistSchema = z.infer<typeof createTodolistSchema>;
 
 export function TodoDialog({
-  endpoint,
   isOpen,
   handleCloseDialog,
+  endpoint,
 }: NewTodoDialogProps) {
   const form = useForm<CreateTodolistSchema>({
     resolver: zodResolver(createTodolistSchema),
@@ -45,22 +45,6 @@ export function TodoDialog({
   const onSubmit = handleSubmit(async (values) => {
     setIsSubmitting(true);
     try {
-      // mutate(
-      //   endpoint,
-      //   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      //   (prevData: any) => {
-      //     if (!prevData || !prevData.data) return prevData;
-
-      //     return {
-      //       data: [],
-      //     };
-      //   },
-      //   false
-      // );
-
-      mutate(endpoint);
-
-      throw new Error("Test Error");
       const response = await fetch("/api/todolists", {
         method: "POST",
         headers: {
@@ -70,7 +54,6 @@ export function TodoDialog({
       });
 
       const data = await response.json();
-      // const newTask = data.data;
 
       if (!response.ok) {
         throw new Error(data.error || "Something went wrong");
@@ -85,6 +68,30 @@ export function TodoDialog({
         todo: "",
         status: false,
       });
+
+      const newTask: Todo = {
+        id: data.data.id,
+        todo: data.data.todo,
+        status: data.data.status,
+        created_at: data.data.created_at,
+        deleted_at: data.data.deleted_at,
+      };
+
+      mutate(
+        endpoint,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (data: any) => {
+          if (!data || !data.data) return data;
+
+          return {
+            data: {
+              ...data,
+              data: [...data.data, newTask],
+            },
+          };
+        },
+        true
+      );
 
       handleCloseDialog();
     } catch (error) {

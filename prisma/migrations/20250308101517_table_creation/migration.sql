@@ -18,8 +18,8 @@ CREATE TABLE `todolists` (
     `updated_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `deleted_at` DATETIME(3) NULL,
 
-    UNIQUE INDEX `todolists_todo_key`(`todo`),
     INDEX `todolists_username_fkey`(`username`),
+    UNIQUE INDEX `todolists_username_todo_key`(`username`, `todo`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

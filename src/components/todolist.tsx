@@ -32,8 +32,9 @@ import { Skeleton } from "./ui/skeleton";
 
 export type Todo = {
   id: number;
-  status: boolean;
   todo: string;
+  status: boolean;
+  created_at?: string;
   deleted_at?: string;
 };
 
@@ -398,7 +399,11 @@ export default function TodolistPage() {
         </Table>
       </div>
 
-      <TodoDialog isOpen={isOpen} handleCloseDialog={handleCloseDialog} />
+      <TodoDialog
+        endpoint={endpoint}
+        isOpen={isOpen}
+        handleCloseDialog={handleCloseDialog}
+      />
 
       <TodoEditDialog
         todo={editedTask}
