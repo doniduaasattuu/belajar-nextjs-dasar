@@ -10,7 +10,7 @@ export default function ProfilePage() {
       <div className="space-y-8">
         <Card className="p-6">
           <div className="mb-6">
-            <div className="font-semibold">Profile Information</div>
+            <div className="font-semibold text-lg">Profile Information</div>
             <p className="text-sm text-muted-foreground">
               Update your account&apos;s profile information and username
             </p>
@@ -19,7 +19,7 @@ export default function ProfilePage() {
         </Card>
         <Card className="p-6">
           <div className="mb-6">
-            <div className="font-semibold">Profile</div>
+            <div className="font-semibold text-lg">Profile</div>
             <p className="text-sm text-muted-foreground">
               Ensure your account is using a long, random password to stay
               secure

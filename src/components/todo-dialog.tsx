@@ -22,15 +22,19 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CreateTodolistSchema } from "@/validations/todolist-validation";
 import z from "zod";
+import { mutate } from "swr";
 import { useState } from "react";
 import { toast } from "sonner";
-import { mutate } from "swr";
 import { NewTodoDialogProps } from "./todolist";
 
 const createTodolistSchema = CreateTodolistSchema;
 type CreateTodolistSchema = z.infer<typeof createTodolistSchema>;
 
-export function TodoDialog({ isOpen, handleCloseDialog }: NewTodoDialogProps) {
+export function TodoDialog({
+  endpoint,
+  isOpen,
+  handleCloseDialog,
+}: NewTodoDialogProps) {
   const form = useForm<CreateTodolistSchema>({
     resolver: zodResolver(createTodolistSchema),
   });
@@ -41,6 +45,22 @@ export function TodoDialog({ isOpen, handleCloseDialog }: NewTodoDialogProps) {
   const onSubmit = handleSubmit(async (values) => {
     setIsSubmitting(true);
     try {
+      // mutate(
+      //   endpoint,
+      //   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      //   (prevData: any) => {
+      //     if (!prevData || !prevData.data) return prevData;
+
+      //     return {
+      //       data: [],
+      //     };
+      //   },
+      //   false
+      // );
+
+      mutate(endpoint);
+
+      throw new Error("Test Error");
       const response = await fetch("/api/todolists", {
         method: "POST",
         headers: {
@@ -50,6 +70,7 @@ export function TodoDialog({ isOpen, handleCloseDialog }: NewTodoDialogProps) {
       });
 
       const data = await response.json();
+      // const newTask = data.data;
 
       if (!response.ok) {
         throw new Error(data.error || "Something went wrong");
@@ -60,8 +81,11 @@ export function TodoDialog({ isOpen, handleCloseDialog }: NewTodoDialogProps) {
           ? "Task restored successfully"
           : "Task added successfully",
       });
-      reset();
-      mutate(`${origin}/api/todolists`);
+      reset({
+        todo: "",
+        status: false,
+      });
+
       handleCloseDialog();
     } catch (error) {
       toast.error("Error", {

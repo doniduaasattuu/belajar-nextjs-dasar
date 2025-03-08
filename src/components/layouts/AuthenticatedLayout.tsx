@@ -10,7 +10,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "../ui/dropdown-menu";
-import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -33,7 +32,7 @@ export default function AuthenticatedLayout({
       <Navbar className="max-w-2xl px-4 mx-auto">
         <NavbarLeft>
           <div
-            className="font-semibold cursor-pointer"
+            className="font-semibold cursor-pointer text-lg"
             onClick={() => router.push("/todolists")}
           >
             TodolistApp
@@ -56,10 +55,9 @@ export default function AuthenticatedLayout({
                   <AvatarFallback>CN</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
-
               <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href="/auth/profile">Profile</Link>
+                <DropdownMenuItem onClick={() => router.push("/auth/profile")}>
+                  Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout}>
                   Logout

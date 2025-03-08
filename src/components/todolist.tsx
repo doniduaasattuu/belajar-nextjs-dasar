@@ -24,7 +24,7 @@ import {
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import useSWR, { mutate, ScopedMutator } from "swr";
+import useSWR, { mutate } from "swr";
 import { TodoDialog } from "./todo-dialog";
 import TodoEditDialog from "./todo-edit-dialog";
 import { DropdownMenuCheckboxItemProps } from "@radix-ui/react-dropdown-menu";
@@ -40,13 +40,13 @@ export type Todo = {
 export type NewTodoDialogProps = {
   isOpen: boolean;
   handleCloseDialog: () => void;
+  endpoint?: string;
 };
 
 export type EditTodoDialogProps = {
   isOpen: boolean;
   handleCloseDialog: () => void;
   todo: Todo | undefined;
-  mutate: ScopedMutator;
   endpoint?: string;
 };
 
@@ -59,7 +59,7 @@ export default function TodolistPage() {
 
   type Checked = DropdownMenuCheckboxItemProps["checked"];
   const [withTrashed, setWithTrashed] = React.useState<Checked>(false);
-  const [order, setOrder] = React.useState<string>("asc");
+  const [order, setOrder] = React.useState<string>("desc");
 
   const endpoint = `${origin}/api/todolists?withTrashed=${withTrashed}&order=${order}`;
   const { data, isLoading } = useSWR(endpoint, fetcher, {
@@ -289,14 +289,14 @@ export default function TodolistPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuLabel>Sorted by</DropdownMenuLabel>
+                <DropdownMenuLabel>Order by</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup value={order} onValueChange={setOrder}>
                   <DropdownMenuRadioItem value="asc">
-                    Ascending
+                    Oldest
                   </DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="desc">
-                    Descending
+                    Latest
                   </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
                 <DropdownMenuSeparator />
@@ -320,6 +320,9 @@ export default function TodolistPage() {
             {isLoading ? (
               <TableRow>
                 <TableCell className="space-y-6">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-full" />
@@ -398,7 +401,6 @@ export default function TodolistPage() {
       <TodoDialog isOpen={isOpen} handleCloseDialog={handleCloseDialog} />
 
       <TodoEditDialog
-        mutate={mutate}
         todo={editedTask}
         isOpen={isEdit}
         handleCloseDialog={handleCloseDialog}

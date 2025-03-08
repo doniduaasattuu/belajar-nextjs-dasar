@@ -17,6 +17,7 @@ import {
 } from "./ui/form";
 import { EditTodoSchema } from "@/validations/todolist-validation";
 import z from "zod";
+import { mutate } from "swr";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "./ui/input";
@@ -31,7 +32,6 @@ export default function TodoEditDialog({
   isOpen,
   handleCloseDialog,
   todo,
-  mutate,
   endpoint,
 }: EditTodoDialogProps) {
   const form = useForm<EditTodoSchema>({
