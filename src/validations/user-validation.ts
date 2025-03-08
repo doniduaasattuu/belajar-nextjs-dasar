@@ -15,12 +15,18 @@ export const BaseUserSchema = z.object({
   new_password: z.string({ message: "New Password is required" }).min(8),
 });
 
-export const RegisterUserSchema = BaseUserSchema.extend({
-  confirm: z.string().min(8),
-}).refine((data) => data.password === data.confirm, {
-  message: "Password don't match",
-  path: ["confirm"],
-});
+export const RegisterUserSchema = BaseUserSchema.pick({
+  username: true,
+  name: true,
+  password: true,
+})
+  .extend({
+    confirm: z.string().min(8),
+  })
+  .refine((data) => data.password === data.confirm, {
+    message: "Password don't match",
+    path: ["confirm"],
+  });
 
 export const LoginUserSchema = BaseUserSchema.pick({
   username: true,

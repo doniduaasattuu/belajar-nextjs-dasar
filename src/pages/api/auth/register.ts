@@ -15,10 +15,11 @@ export default async function handler(
   }
 
   try {
-    const validatedData = RegisterUserSchema.parse(req.body);
+    const credentials = RegisterUserSchema.parse(req.body);
+    const { username, name, password } = credentials;
     const userWithSameUsername = await prismaClient.user.count({
       where: {
-        username: validatedData.username,
+        username: username,
       },
     });
 
@@ -28,10 +29,14 @@ export default async function handler(
       });
     }
 
-    validatedData.password = await bcrypt.hash(validatedData.password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prismaClient.user.create({
-      data: validatedData,
+      data: {
+        username: username,
+        name: name,
+        password: hashedPassword,
+      },
     });
 
     return res.status(200).json({
@@ -42,10 +47,10 @@ export default async function handler(
       return res.status(400).json({
         error: error.errors[0],
       });
+    } else if (error instanceof Error) {
+      return res.status(500).json({
+        error: "Error occured",
+      });
     }
-
-    return res.status(500).json({
-      error: "Error occured",
-    });
   }
 }
