@@ -3,7 +3,6 @@ import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 
-// ✅ Define authOptions so it can be reused
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -43,14 +42,20 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.username = user.username;
         token.name = user.name;
-      } else if (trigger === "update") {
-        token.name = session.user.name;
+        token.image = user.image;
       }
+
+      if (trigger === "update") {
+        token.name = session.user.name;
+        token.image = session.user.image;
+      }
+
       return token;
     },
     async session({ session, token }) {
       session.user.username = token.username;
       session.user.name = token.name;
+      session.user.image = token.image;
       return session;
     },
   },

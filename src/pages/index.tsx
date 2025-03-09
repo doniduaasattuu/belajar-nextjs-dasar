@@ -1,14 +1,20 @@
-import Link from "next/link";
-import * as React from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
 
 const Dashboard = () => {
-  return (
-    <div className="flex justify-center items-center w-full h-screen ">
-      <h1 className="font-bold text-4xl text-muted-foreground">
-        <Link href="/auth/login">Login</Link>
-      </h1>
-    </div>
-  );
+  const router = useRouter();
+  const { status } = useSession();
+
+  useEffect(() => {
+    if (status == "authenticated") {
+      router.push("/todolists");
+    } else {
+      router.push("/auth/login");
+    }
+  }, [status, router]);
+
+  return null;
 };
 
 export default Dashboard;

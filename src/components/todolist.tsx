@@ -29,12 +29,13 @@ import { TodoDialog } from "./todo-dialog";
 import TodoEditDialog from "./todo-edit-dialog";
 import { DropdownMenuCheckboxItemProps } from "@radix-ui/react-dropdown-menu";
 import { Skeleton } from "./ui/skeleton";
+import { formattedDate } from "@/lib/utils";
 
 export type Todo = {
   id: number;
   todo: string;
   status: boolean;
-  created_at?: string;
+  created_at: string;
   deleted_at?: string;
 };
 
@@ -64,7 +65,7 @@ export default function TodolistPage() {
 
   const endpoint = `${origin}/api/todolists?withTrashed=${withTrashed}&order=${order}`;
   const { data, isLoading } = useSWR(endpoint, fetcher, {
-    // refreshInterval: 5000,
+    refreshInterval: 3000,
   });
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isEdit, setIsEdit] = useState<boolean>(false);
@@ -361,7 +362,10 @@ export default function TodolistPage() {
                       )}
                     </Label>
                   </TableCell>
-                  <TableCell className="text-right items-center">
+                  <TableCell className="text-right text-muted-foreground items-center">
+                    {formattedDate(todo.created_at)}
+                  </TableCell>
+                  <TableCell className="text-right items-center w-8">
                     <DropdownMenu>
                       <DropdownMenuTrigger>
                         <MoreVertical size={18} />

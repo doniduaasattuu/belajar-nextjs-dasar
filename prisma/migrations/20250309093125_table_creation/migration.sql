@@ -3,6 +3,7 @@ CREATE TABLE `users` (
     `username` VARCHAR(100) NOT NULL,
     `password` VARCHAR(255) NOT NULL,
     `name` VARCHAR(100) NOT NULL,
+    `image` VARCHAR(100) NULL,
 
     UNIQUE INDEX `users_username_key`(`username`),
     PRIMARY KEY (`username`)

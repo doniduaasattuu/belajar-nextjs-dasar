@@ -11,6 +11,7 @@ model User {
   username  String     @id @unique @db.VarChar(100)
   password  String     @db.VarChar(255)
   name      String     @db.VarChar(100)
+  image     String?    @db.VarChar(100)
   todolists Todolist[]
 
   @@map("users")
