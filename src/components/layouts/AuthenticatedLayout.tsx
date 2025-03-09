@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { Card } from "../ui/card";
 import { Navbar, NavbarLeft, NavbarRight } from "../ui/navbar";
 import { ThemeToggle } from "../theme-toggle";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Avatar, AvatarImage } from "../ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -25,7 +25,16 @@ export default function AuthenticatedLayout({
 }) {
   const router = useRouter();
   const { data } = useSession();
-  const name = data?.user?.name;
+  const user = data?.user;
+  const [image, setImage] = useState<string | null | undefined>("");
+  const [name, setName] = useState<string | null | undefined>("");
+
+  React.useEffect(() => {
+    if (user) {
+      setImage(user.image);
+      setName(user.name);
+    }
+  }, [user]);
 
   return (
     <Card className="w-full min-h-screen rounded-none shadow-none border-none">
@@ -49,10 +58,9 @@ export default function AuthenticatedLayout({
               <DropdownMenuTrigger asChild>
                 <Avatar className="cursor-pointer h-9 w-9">
                   <AvatarImage
-                    src="https://github.com/shadcn.png"
-                    alt="@shadcn"
+                    src={image ?? "/images/default.png"}
+                    className="object-cover"
                   />
-                  <AvatarFallback>CN</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

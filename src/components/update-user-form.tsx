@@ -18,6 +18,7 @@ import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
 const updateFormSchema = UpdateUserSchema;
+
 type UpdateFormSchema = z.infer<typeof updateFormSchema>;
 
 export default function UpdateUserForm() {
@@ -27,10 +28,6 @@ export default function UpdateUserForm() {
   // UPDATE USER FORM
   const updateUserForm = useForm<UpdateFormSchema>({
     resolver: zodResolver(updateFormSchema),
-    defaultValues: {
-      username: "",
-      name: "",
-    },
   });
 
   React.useEffect(() => {
@@ -42,39 +39,40 @@ export default function UpdateUserForm() {
     }
   }, [user, updateUserForm]);
 
-  const { handleSubmit, control, setError } = updateUserForm;
+  const { handleSubmit, control } = updateUserForm;
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      if (user?.name == values.name) {
-        toast.success("Success", {
-          description: "Profile successfully updated",
-        });
-        return;
+      const formData = new FormData();
+      formData.append("username", values.username);
+      formData.append("name", values.name);
+
+      if (values.image) {
+        formData.append("image", values.image);
       }
 
       const response = await fetch("/api/auth/profile", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
+        body: formData,
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        if (result.field) {
-          setError(result.field, { type: "server", message: result.message });
-        }
-        return;
+        throw new Error("An unexpected error occured");
       }
 
       toast.success("Success", {
         description: "Profile successfully updated",
       });
 
-      await update({ user: { ...data?.user, name: result.data.name } });
+      await update({
+        user: {
+          ...data?.user,
+          name: result.data.name,
+          image: result.data.image,
+        },
+      });
     } catch (error) {
       if (error instanceof Error) {
         toast.error("Error", {
@@ -108,6 +106,29 @@ export default function UpdateUserForm() {
               <FormLabel>Name</FormLabel>
               <FormControl>
                 <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name="image"
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          render={({ field: { onChange, value, ref, ...rest } }) => (
+            <FormItem className="max-w-md">
+              <FormLabel>Avatar</FormLabel>
+              <FormControl>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null; // Ensure correct file type
+                    onChange(file); // Store File object, not string
+                  }}
+                  ref={ref}
+                  {...rest}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
